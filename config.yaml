@@ -1,0 +1,8 @@
+templates_dir: "templates"
+templates_meta_dir: "templates_meta"
+runs_dir: "runs"
+prompts_dir: "prompts"
+powerpoint_path: null
+libreoffice_path: null
+auto_save_interval_sec: 10
+candidates_per_element: 3

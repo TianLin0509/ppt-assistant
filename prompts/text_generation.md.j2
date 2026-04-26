@@ -1,0 +1,21 @@
+你的任务：{{ task_description }}
+
+请为以下 PPT 元素各生成 {{ n_candidates }} 个备选文案，严格按 JSON 格式输出。
+
+元素列表：
+{% for e in elements %}
+- "{{ e.role_key }}": {{ e.role_zh }}{% if e.text_subtype %}（{{ e.text_subtype.value }}类型）{% endif %}{% if e.max_chars %}，最多{{ e.max_chars }}字{% endif %}
+
+  原文参考：{{ e.current_content or "无" }}
+{% endfor %}
+
+输出格式要求：
+1. 严格 JSON，不要有注释或额外解释
+2. 每个 key 对应一个列表，列表内 {{ n_candidates }} 个字符串
+
+```json
+{
+{% for e in elements %}  "{{ e.role_key }}": ["备选A", "备选B", "备选C"]{% if not loop.last %},{% endif %}
+
+{% endfor %}}
+```

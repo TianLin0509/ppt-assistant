@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+dist/
+build/
+.streamlit/
+runs/*/
+templates_meta/*.png
+templates_meta/*.json
+!templates_meta/.gitkeep
+.superpowers/
