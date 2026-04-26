@@ -12,7 +12,7 @@ from src.utils.state_manager import (
 from src.prompt.text_prompt_builder import build_text_prompt
 from src.prompt.json_parser import parse_ai_json
 from src.core.pptx_filler import fill_template
-from src.core.pptx_renderer import render_slide_to_png
+from src.core.pptx_renderer import render_slide_to_png, render_slides_to_png
 from src.schema import TaskRun, TextCandidates
 
 try:
@@ -108,6 +108,7 @@ runs_dir.mkdir(parents=True, exist_ok=True)
 
 if st.button("生成三套预览"):
     with st.spinner("正在生成预览（共 3 套，请稍候）..."):
+        render_items = []
         for vi in range(n_variants):
             choices_vi = {}
             for role_key, options in candidates.items():
@@ -118,8 +119,9 @@ if st.button("生成三套预览"):
             fill_template(meta.file_path, meta, choices_vi, pptx_path)
 
             png_path = str(runs_dir / f"preview_{variant_labels[vi]}.png")
-            render_slide_to_png(pptx_path, png_path)
+            render_items.append((pptx_path, png_path))
 
+        render_slides_to_png(render_items)
         st.session_state["previews_generated"] = True
     st.rerun()
 
