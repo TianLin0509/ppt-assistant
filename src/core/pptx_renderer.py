@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import atexit
 from pathlib import Path
 
 import pythoncom
 import win32com.client
-
-_ppt_app = None
 
 
 def render_slide_to_png(
@@ -21,37 +18,20 @@ def render_slide_to_png(
     out_abs = str(Path(output_png).resolve())
     Path(out_abs).parent.mkdir(parents=True, exist_ok=True)
 
-    app = _get_powerpoint_app()
-    pres = app.Presentations.Open(pptx_abs, WithWindow=False)
+    pythoncom.CoInitialize()
     try:
-        slide = pres.Slides[slide_index + 1]  # COM is 1-indexed
-        slide.Export(out_abs, "PNG", width)
+        app = win32com.client.Dispatch("PowerPoint.Application")
+        pres = app.Presentations.Open(pptx_abs, WithWindow=False)
+        try:
+            slide = pres.Slides[slide_index + 1]
+            slide.Export(out_abs, "PNG", width)
+        finally:
+            pres.Close()
+        app.Quit()
     finally:
-        pres.Close()
+        pythoncom.CoUninitialize()
 
     if not Path(out_abs).exists():
         raise RuntimeError(f"PowerPoint failed to export: {out_abs}")
 
     return out_abs
-
-
-def _get_powerpoint_app():
-    global _ppt_app
-    if _ppt_app is not None:
-        return _ppt_app
-
-    pythoncom.CoInitialize()
-    _ppt_app = win32com.client.Dispatch("PowerPoint.Application")
-    atexit.register(_ensure_powerpoint_closed)
-    return _ppt_app
-
-
-def _ensure_powerpoint_closed() -> None:
-    global _ppt_app
-    if _ppt_app is not None:
-        try:
-            _ppt_app.Quit()
-        except Exception:
-            pass
-        _ppt_app = None
-        pythoncom.CoUninitialize()

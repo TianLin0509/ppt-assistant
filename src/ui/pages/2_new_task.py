@@ -1,4 +1,4 @@
-"""New task workflow: select template -> generate prompt -> paste JSON -> pick candidates -> export."""
+"""New task workflow: select template -> generate prompt -> paste JSON -> preview 3 candidates -> export."""
 
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +14,6 @@ from src.prompt.json_parser import parse_ai_json
 from src.core.pptx_filler import fill_template
 from src.core.pptx_renderer import render_slide_to_png
 from src.schema import TaskRun, TextCandidates
-from src.ui.components.candidate_picker import render_candidate_picker
 
 try:
     from st_copy_to_clipboard import st_copy_to_clipboard
@@ -97,46 +96,77 @@ task.text_candidates = TextCandidates(
 task.status = "selecting"
 task.current_step = 5
 
-# --- Step 5: Pick candidates ---
-st.subheader("Step 5: 挑选备选")
-choices = render_candidate_picker(task.text_candidates, meta)
-task.text_choices = choices
+# --- Step 5: Generate 3 preview variants ---
+st.subheader("Step 5: 生成三套预览 → 整体对比选择")
 
-# --- Step 6: Generate preview ---
-st.subheader("Step 6: 生成预览")
-if st.button("生成预览"):
-    task.status = "rendering"
-    task.current_step = 6
+candidates = task.text_candidates.candidates
+n_variants = min(config.candidates_per_element, min(len(v) for v in candidates.values()) if candidates else 3)
+variant_labels = [chr(65 + i) for i in range(n_variants)]
 
-    runs_dir = resolve_path(config.runs_dir) / task.task_id
-    runs_dir.mkdir(parents=True, exist_ok=True)
+runs_dir = resolve_path(config.runs_dir) / task.task_id
+runs_dir.mkdir(parents=True, exist_ok=True)
 
-    output_pptx = str(runs_dir / "output.pptx")
-    fill_template(meta.file_path, meta, task.text_choices, output_pptx)
-    task.output_pptx = output_pptx
+if st.button("生成三套预览"):
+    with st.spinner("正在生成预览（共 3 套，请稍候）..."):
+        for vi in range(n_variants):
+            choices_vi = {}
+            for role_key, options in candidates.items():
+                idx = min(vi, len(options) - 1)
+                choices_vi[role_key] = options[idx]
 
-    preview_png = str(runs_dir / "preview.png")
-    render_slide_to_png(output_pptx, preview_png)
-    task.preview_image = preview_png
+            pptx_path = str(runs_dir / f"variant_{variant_labels[vi]}.pptx")
+            fill_template(meta.file_path, meta, choices_vi, pptx_path)
 
-    task.status = "completed"
-    task.current_step = 7
-    save_task(task)
+            png_path = str(runs_dir / f"preview_{variant_labels[vi]}.png")
+            render_slide_to_png(pptx_path, png_path)
 
-    st.image(preview_png, caption="预览", use_container_width=True)
+        st.session_state["previews_generated"] = True
+    st.rerun()
 
-# --- Step 7: Download ---
-if task.output_pptx and Path(task.output_pptx).exists():
-    st.subheader("Step 7: 导出")
+if st.session_state.get("previews_generated"):
+    cols = st.columns(n_variants)
+    for vi, col in enumerate(cols):
+        label = variant_labels[vi]
+        png_path = runs_dir / f"preview_{label}.png"
+        with col:
+            st.markdown(f"### 方案 {label}")
+            if png_path.exists():
+                st.image(str(png_path), use_container_width=True)
+
+            with st.expander("查看文案详情"):
+                for role_key, options in candidates.items():
+                    idx = min(vi, len(options) - 1)
+                    el = next((e for e in meta.editable_text_elements if e.role_key == role_key), None)
+                    label_text = el.display_label if el else role_key
+                    st.markdown(f"**{label_text}**")
+                    st.caption(options[idx])
+
+            if st.button(f"选择方案 {label}", key=f"select_variant_{label}"):
+                for role_key, options in candidates.items():
+                    idx = min(vi, len(options) - 1)
+                    task.text_choices[role_key] = options[idx]
+                task.output_pptx = str(runs_dir / f"variant_{label}.pptx")
+                task.preview_image = str(png_path)
+                task.status = "completed"
+                task.current_step = 7
+                save_task(task)
+                st.session_state["selected_variant"] = label
+                st.rerun()
+
+# --- Step 6: Download ---
+selected = st.session_state.get("selected_variant")
+if selected and task.output_pptx and Path(task.output_pptx).exists():
+    st.subheader(f"Step 6: 导出（方案 {selected}）")
+    st.image(task.preview_image, caption=f"方案 {selected} 预览", use_container_width=True)
     with open(task.output_pptx, "rb") as f:
         st.download_button(
-            "下载 .pptx",
+            f"下载方案 {selected} .pptx",
             data=f,
-            file_name=f"{task.task_id}.pptx",
+            file_name=f"{task.task_id}_{selected}.pptx",
             mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         )
 
-# --- Auto-save (Task 11) ---
+# --- Auto-save ---
 @st.fragment(run_every=config.auto_save_interval_sec)
 def auto_save():
     if "current_task" in st.session_state:
