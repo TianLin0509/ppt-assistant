@@ -1,7 +1,14 @@
-"""Render .pptx slides to PNG via PowerPoint COM automation."""
+"""Render .pptx slides to PNG via PowerPoint COM automation.
+
+WithWindow=True is required: PowerPoint uses cached thumbnails when
+opening WithWindow=False, so python-pptx text changes won't appear
+in the exported PNG. We open with a visible window (minimized) to
+force full re-rendering.
+"""
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import pythoncom
@@ -17,13 +24,16 @@ def render_slides_to_png(
     pythoncom.CoInitialize()
     try:
         app = win32com.client.Dispatch("PowerPoint.Application")
+        app.Visible = True
+        app.WindowState = 2  # ppWindowMinimized
         try:
             for pptx_path, output_png in items:
                 pptx_abs = str(Path(pptx_path).resolve())
                 out_abs = str(Path(output_png).resolve())
                 Path(out_abs).parent.mkdir(parents=True, exist_ok=True)
 
-                pres = app.Presentations.Open(pptx_abs, WithWindow=False)
+                pres = app.Presentations.Open(pptx_abs)
+                time.sleep(0.5)
                 try:
                     slide = pres.Slides[slide_index + 1]
                     slide.Export(out_abs, "PNG", width)
