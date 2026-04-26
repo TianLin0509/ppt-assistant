@@ -126,14 +126,16 @@ if st.button("生成三套预览"):
     st.rerun()
 
 if st.session_state.get("previews_generated"):
-    cols = st.columns(n_variants)
-    for vi, col in enumerate(cols):
+    tab_names = [f"方案 {label}" for label in variant_labels]
+    tabs = st.tabs(tab_names)
+    for vi, tab in enumerate(tabs):
         label = variant_labels[vi]
         png_path = runs_dir / f"preview_{label}.png"
-        with col:
-            st.markdown(f"### 方案 {label}")
+        with tab:
             if png_path.exists():
                 st.image(str(png_path), use_container_width=True)
+            else:
+                st.error(f"预览图未生成: {png_path}")
 
             with st.expander("查看文案详情"):
                 for role_key, options in candidates.items():
@@ -143,7 +145,7 @@ if st.session_state.get("previews_generated"):
                     st.markdown(f"**{label_text}**")
                     st.caption(options[idx])
 
-            if st.button(f"选择方案 {label}", key=f"select_variant_{label}"):
+            if st.button(f"选择方案 {label}", key=f"select_variant_{label}", type="primary"):
                 for role_key, options in candidates.items():
                     idx = min(vi, len(options) - 1)
                     task.text_choices[role_key] = options[idx]
