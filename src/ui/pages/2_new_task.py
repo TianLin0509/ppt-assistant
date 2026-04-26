@@ -100,7 +100,7 @@ task.current_step = 5
 st.subheader("Step 5: 生成三套预览 → 整体对比选择")
 
 candidates = task.text_candidates.candidates
-n_variants = min(config.candidates_per_element, min(len(v) for v in candidates.values()) if candidates else 3)
+n_variants = min(config.candidates_per_element, max(len(v) for v in candidates.values()) if candidates else 3)
 variant_labels = [chr(65 + i) for i in range(n_variants)]
 
 runs_dir = resolve_path(config.runs_dir) / task.task_id
