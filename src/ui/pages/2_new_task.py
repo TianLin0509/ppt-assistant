@@ -94,7 +94,7 @@ if meta:
         st.info("安装 st-copy-to-clipboard 后可一键复制。手动选中上方文本复制。")
 
     # --- Image prompt (if template has image placeholders) ---
-    image_prompt = build_image_prompt(meta, task_desc, style_id=style_id)
+    image_prompt = build_image_prompt(meta, task_desc)
     if image_prompt:
         task.image_prompt = image_prompt
         st.divider()
