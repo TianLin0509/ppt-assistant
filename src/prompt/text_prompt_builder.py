@@ -102,7 +102,6 @@ def _compute_aspect_ratio(bbox: BBox) -> str:
 def build_image_prompt(
     meta: TemplateMeta,
     task_description: str,
-    style_id: str | None = None,
 ) -> str | None:
     """Generate image description prompt for image placeholders. Returns None if no image elements."""
     images = meta.editable_image_elements
@@ -129,10 +128,7 @@ def build_image_prompt(
             "current_content": img.current_content,
         })
 
-    style_content = _load_style_content(style_id)
-
     return template.render(
         task_description=task_description,
-        style_content=style_content,
         images=image_data,
     )
