@@ -1,10 +1,25 @@
 你的任务：{{ task_description }}
+{% if style_content %}
+
+═══ 写作风格要求 ═══
+{{ style_content }}
+{% endif %}
+{% if layout_type %}
+
+═══ 当前版式类型 ═══
+{% if layout_type == "dual_column" %}本页为双栏并列版式，适合 As-Is vs To-be、用户级 vs 网络级等对比分析。请生成对比式内容。
+{% elif layout_type == "top_summary" %}本页为上总下分版式，上方放总结论/总流程，下方拆模块展开。请先写总结论，再写分模块要点。
+{% elif layout_type == "flow_chain" %}本页为流程链版式，中间主链路，周围输入/增强/应用/收益。请按流程步骤组织内容。
+{% elif layout_type == "card_grid" %}本页为多模块卡片版式，每模块独立。请为每个模块生成独立完整的内容。
+{% else %}版式类型：{{ layout_type }}。请根据版式特点组织内容结构。
+{% endif %}
+{% endif %}
 
 请为以下 PPT 元素各生成 {{ n_candidates }} 个备选文案，严格按 JSON 格式输出。
 
 元素列表：
 {% for e in elements %}
-- "{{ e.role_key }}": {{ e.role_zh }}{% if e.text_subtype %}（{{ e.text_subtype.value }}类型）{% endif %}{% if e.max_chars %}，最多{{ e.max_chars }}字{% endif %}
+- "{{ e.role_key }}": {{ e.role_zh }}{% if e.text_subtype %}（{{ e.text_subtype.value }}类型）{% endif %}{% if e.min_chars and e.max_chars %}，建议{{ e.min_chars }}-{{ e.max_chars }}字，尽量充实内容不留空白{% elif e.max_chars %}，最多{{ e.max_chars }}字{% endif %}{% if e.text_subtype and e.text_subtype.value == "title" %}，控制在一行内{% endif %}
 
   原文参考：{{ e.current_content or "无" }}
 {% endfor %}
