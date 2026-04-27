@@ -2,7 +2,44 @@
 
 from __future__ import annotations
 
-from src.schema import ShapeRole, ShapeType, TextSubtype
+from statistics import median
+
+from src.schema import BBox, ShapeRole, ShapeType, TextSubtype
+
+EMU_PER_PT = 12700
+
+
+def estimate_char_capacity(
+    bbox: BBox,
+    font_size_pt: float,
+    is_title: bool = False,
+) -> tuple[int, int]:
+    """Estimate (min_chars, max_chars) a text box can hold based on physical dimensions."""
+    bbox_width_pt = bbox.width / EMU_PER_PT
+    bbox_height_pt = bbox.height / EMU_PER_PT
+
+    if font_size_pt <= 0:
+        font_size_pt = 12.0
+
+    chars_per_line = bbox_width_pt / font_size_pt
+    line_height = font_size_pt * 1.5
+    lines = bbox_height_pt / line_height
+
+    if is_title:
+        lines = 1.0
+
+    theoretical_max = chars_per_line * lines
+    max_chars = max(int(theoretical_max * 0.85), 1)
+    min_chars = max(int(theoretical_max * 0.55), 1)
+
+    return (min_chars, max_chars)
+
+
+def _resolve_font_size(el: ShapeRole, fallback_pt: float) -> float:
+    """Get font size: element's own font > fallback median > 12pt."""
+    if el.first_run_font and el.first_run_font.size_pt:
+        return el.first_run_font.size_pt
+    return fallback_pt
 
 
 def infer_roles(
@@ -13,6 +50,13 @@ def infer_roles(
     title_counter = 0
     body_counter = 0
     image_counter = 0
+
+    body_font_sizes = []
+    for el in elements:
+        if el.type == ShapeType.TEXT and el.first_run_font and el.first_run_font.size_pt:
+            if el.first_run_font.size_pt < 24:
+                body_font_sizes.append(el.first_run_font.size_pt)
+    fallback_font_pt = median(body_font_sizes) if body_font_sizes else 12.0
 
     for el in elements:
         if not el.is_editable:
@@ -58,8 +102,9 @@ def infer_roles(
 
         el.role_confirmed = False
 
-        if el.current_content:
-            el.max_chars = max(len(el.current_content) * 2, 50)
-            el.max_lines = el.paragraph_count or 1
+        is_title = el.text_subtype == TextSubtype.TITLE
+        resolved_font = _resolve_font_size(el, fallback_font_pt)
+        el.min_chars, el.max_chars = estimate_char_capacity(el.bbox, resolved_font, is_title=is_title)
+        el.max_lines = el.paragraph_count or 1
 
     return elements
