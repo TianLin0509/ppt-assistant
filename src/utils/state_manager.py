@@ -71,3 +71,11 @@ def list_template_metas() -> list[TemplateMeta]:
         data = json.loads(f.read_text(encoding="utf-8"))
         results.append(TemplateMeta(**data))
     return results
+
+
+def check_template_consistency(meta: TemplateMeta) -> bool:
+    """Return True if template file mtime matches metadata snapshot. False if stale or file missing."""
+    template_path = Path(meta.file_path)
+    if not template_path.exists():
+        return False
+    return abs(template_path.stat().st_mtime - meta.file_mtime) < 0.01
