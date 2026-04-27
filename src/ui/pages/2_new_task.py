@@ -10,7 +10,7 @@ from src.utils.state_manager import (
     list_template_metas, load_template_meta, save_task, save_raw_response,
     check_template_consistency,
 )
-from src.prompt.text_prompt_builder import build_text_prompt, build_revision_prompt, list_available_styles
+from src.prompt.text_prompt_builder import build_text_prompt, build_revision_prompt, list_available_styles, build_image_prompt
 from src.prompt.json_parser import parse_ai_json
 from src.core.pptx_filler import fill_template
 from src.core.pptx_renderer import render_slide_to_png, render_slides_to_png
@@ -92,6 +92,18 @@ if meta:
         st_copy_to_clipboard(prompt, "复制 Prompt")
     else:
         st.info("安装 st-copy-to-clipboard 后可一键复制。手动选中上方文本复制。")
+
+    # --- Image prompt (if template has image placeholders) ---
+    image_prompt = build_image_prompt(meta, task_desc, style_id=style_id)
+    if image_prompt:
+        task.image_prompt = image_prompt
+        st.divider()
+        st.markdown("**图片描述 Prompt**")
+        st.code(image_prompt, language="markdown")
+        if st_copy_to_clipboard:
+            st_copy_to_clipboard(image_prompt, "复制图片 Prompt")
+        else:
+            st.info("手动选中上方文本复制。")
 
 # --- Step 4: Paste JSON ---
 st.subheader("Step 4: 粘贴 AI 返回的 JSON")

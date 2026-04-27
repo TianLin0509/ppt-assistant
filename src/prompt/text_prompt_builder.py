@@ -6,7 +6,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from src.schema import TemplateMeta
+from src.schema import BBox, TemplateMeta
 from src.utils.config import resolve_path, load_config
 
 
@@ -77,4 +77,62 @@ def build_revision_prompt(
         previous_response=previous_response,
         revision_notes=revision_notes,
         n_candidates=n_candidates,
+    )
+
+
+def _compute_aspect_ratio(bbox: BBox) -> str:
+    """Map bbox width/height to a human-readable aspect ratio description."""
+    w = bbox.width
+    h = bbox.height
+    if h == 0:
+        return "未知"
+    ratio = w / h
+    if ratio > 1.7:
+        return "16:9 横版"
+    elif ratio > 1.2:
+        return "4:3 横版"
+    elif ratio > 0.8:
+        return "1:1 正方形"
+    elif ratio > 0.6:
+        return "3:4 竖版"
+    else:
+        return "9:16 竖版"
+
+
+def build_image_prompt(
+    meta: TemplateMeta,
+    task_description: str,
+    style_id: str | None = None,
+) -> str | None:
+    """Generate image description prompt for image placeholders. Returns None if no image elements."""
+    images = meta.editable_image_elements
+    images_with_roles = [img for img in images if img.role_key]
+
+    if not images_with_roles:
+        return None
+
+    config = load_config()
+    prompts_dir = resolve_path(config.prompts_dir)
+
+    env = Environment(
+        loader=FileSystemLoader(str(prompts_dir)),
+        keep_trailing_newline=True,
+    )
+    template = env.get_template("image_description.md.j2")
+
+    image_data = []
+    for img in images_with_roles:
+        image_data.append({
+            "role_key": img.role_key,
+            "role_zh": img.role_zh or img.shape_name_original,
+            "aspect_ratio": _compute_aspect_ratio(img.bbox),
+            "current_content": img.current_content,
+        })
+
+    style_content = _load_style_content(style_id)
+
+    return template.render(
+        task_description=task_description,
+        style_content=style_content,
+        images=image_data,
     )

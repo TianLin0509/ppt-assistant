@@ -1,0 +1,31 @@
+你的任务：{{ task_description }}
+
+请为以下 PPT 图片占位符各生成图片内容描述和配图建议。
+{% if style_content %}
+
+═══ 写作风格要求 ═══
+{{ style_content }}
+{% endif %}
+
+图片占位符列表：
+{% for img in images %}
+- "{{ img.role_key }}": {{ img.role_zh }}，建议尺寸比例 {{ img.aspect_ratio }}{% if img.current_content %}，当前图片说明：{{ img.current_content }}{% endif %}
+
+{% endfor %}
+
+请为每个图片生成：
+1. 场景描述：这张图应该展示什么内容（结合 PPT 主题）
+2. 配图建议：建议的图片类型（技术示意图/数据图表/实拍照片/图标等）
+3. 尺寸建议：基于占位符比例，推荐的生图尺寸
+
+输出格式（严格 JSON）：
+```json
+{
+{% for img in images %}  "{{ img.role_key }}": {
+    "scene": "场景描述",
+    "type": "图片类型建议",
+    "size": "建议尺寸如 1920x1080"
+  }{% if not loop.last %},{% endif %}
+
+{% endfor %}}
+```
