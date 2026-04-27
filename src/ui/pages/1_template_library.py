@@ -87,8 +87,30 @@ ROLE_OPTIONS = [
     "image_01", "image_02", "image_03", "decoration",
 ]
 SUBTYPE_OPTIONS = ["", "title", "bullet", "body"]
+LAYOUT_OPTIONS = ["", "dual_column", "top_summary", "flow_chain", "card_grid"]
 
 changed = False
+
+st.markdown("**版式类型**")
+current_layout = meta.layout_type or ""
+layout_labels = {
+    "": "未设置",
+    "dual_column": "双栏并列（对比分析）",
+    "top_summary": "上总下分",
+    "flow_chain": "流程链",
+    "card_grid": "多模块卡片",
+}
+new_layout = st.selectbox(
+    "版式类型",
+    LAYOUT_OPTIONS,
+    index=LAYOUT_OPTIONS.index(current_layout) if current_layout in LAYOUT_OPTIONS else 0,
+    format_func=lambda x: layout_labels.get(x, x),
+    key="layout_type_select",
+)
+if new_layout != current_layout:
+    meta.layout_type = new_layout or None
+    changed = True
+
 for idx, el in enumerate(meta.elements):
     if el.type in (ShapeType.GROUP, ShapeType.SMARTART, ShapeType.CHART, ShapeType.TABLE):
         st.markdown(f"**#{idx}** {el.shape_name_original} — :red[{el.type.value}，不可编辑]")
