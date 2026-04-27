@@ -68,6 +68,7 @@ class ShapeRole(BaseModel):
 
     text_subtype: Optional[TextSubtype] = None
     max_chars: Optional[int] = None
+    min_chars: Optional[int] = None
     max_lines: Optional[int] = None
     current_content: Optional[str] = None
     first_run_font: Optional[FontInfo] = None
@@ -98,6 +99,8 @@ class TemplateMeta(BaseModel):
     slide_width_emu: int = 0
     slide_height_emu: int = 0
 
+    layout_type: Optional[str] = None
+
     elements: list[ShapeRole] = Field(default_factory=list)
 
     @property
@@ -126,6 +129,10 @@ class TaskRun(BaseModel):
     template_id: str
     template_mtime: float = 0.0
 
+    style_id: Optional[str] = None
+    revision_count: int = 0
+    revision_notes: Optional[str] = None
+
     text_prompt: Optional[str] = None
     image_prompt: Optional[str] = None
     ai_response_raw: Optional[str] = None
@@ -151,3 +158,4 @@ class AppConfig(BaseModel):
     libreoffice_path: Optional[str] = None
     auto_save_interval_sec: int = 10
     candidates_per_element: int = 3
+    default_style: str = "huawei"
