@@ -17,9 +17,11 @@
 
 请为以下 PPT 元素各生成 {{ n_candidates }} 个备选文案，严格按 JSON 格式输出。
 
+【重要】每个文本框都必须写满指定字数范围，不要留大面积空白。Bullet 类型的文案要多写几条要点、展开技术细节，确保文字充分填满文本框区域。字数不足会导致 PPT 排版出现大量空白，严重影响展示效果。
+
 元素列表：
 {% for e in elements %}
-- "{{ e.role_key }}": {{ e.role_zh }}{% if e.text_subtype %}（{{ e.text_subtype.value }}类型）{% endif %}{% if e.min_chars and e.max_chars %}，建议{{ e.min_chars }}-{{ e.max_chars }}字，尽量充实内容不留空白{% elif e.max_chars %}，最多{{ e.max_chars }}字{% endif %}{% if e.text_subtype and e.text_subtype.value == "title" %}，控制在一行内{% endif %}
+- "{{ e.role_key }}": {{ e.role_zh }}{% if e.text_subtype %}（{{ e.text_subtype.value }}类型）{% endif %}{% if e.min_chars and e.max_chars %}，必须写满{{ e.min_chars }}-{{ e.max_chars }}字（严格遵守下限）{% elif e.max_chars %}，最多{{ e.max_chars }}字{% endif %}{% if e.text_subtype and e.text_subtype.value == "title" %}，控制在一行内{% endif %}
 
   原文参考：{{ e.current_content or "无" }}
 {% endfor %}

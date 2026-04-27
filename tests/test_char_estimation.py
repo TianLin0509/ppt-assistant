@@ -5,12 +5,12 @@ from src.core.role_inferencer import estimate_char_capacity, infer_roles
 
 
 def test_estimate_basic():
-    """A 200pt x 100pt box at 12pt should hold ~9 chars/line x ~5 lines."""
+    """A 200pt x 100pt box at 12pt: ~16 chars/line x ~6.6 lines ≈ 111 theoretical."""
     bbox = BBox(left=0, top=0, width=200 * 12700, height=100 * 12700)
     min_c, max_c = estimate_char_capacity(bbox, font_size_pt=12.0)
     assert max_c > min_c > 0
-    assert 40 <= min_c <= 60
-    assert 60 <= max_c <= 90
+    assert 70 <= min_c <= 100
+    assert 90 <= max_c <= 120
 
 
 def test_estimate_title_single_line():

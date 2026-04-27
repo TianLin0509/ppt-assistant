@@ -22,15 +22,15 @@ def estimate_char_capacity(
         font_size_pt = 12.0
 
     chars_per_line = bbox_width_pt / font_size_pt
-    line_height = font_size_pt * 1.5
+    line_height = font_size_pt * 1.25
     lines = bbox_height_pt / line_height
 
     if is_title:
         lines = 1.0
 
     theoretical_max = chars_per_line * lines
-    max_chars = max(int(theoretical_max * 0.85), 1)
-    min_chars = max(int(theoretical_max * 0.55), 1)
+    max_chars = max(int(theoretical_max * 0.90), 1)
+    min_chars = max(int(theoretical_max * 0.70), 1)
 
     return (min_chars, max_chars)
 
